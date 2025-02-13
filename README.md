@@ -1,1 +1,1 @@
-EdTech-Database to fetch Course data and image for home screen
+#EdTech-Database to fetch Course data and image for home screen
