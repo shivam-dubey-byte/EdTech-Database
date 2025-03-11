@@ -24,7 +24,7 @@ const getLastCourses = async () => {
   const db = await connectDB("userdata");
   const collection = db.collection('courses');
   // Sort descending by _id (newest first) and limit to 6 documents
-  const courses = await collection.find({}, { projection: { title: 1, image: 1, _id: 0 } })
+  const courses = await collection.find({}, { projection: { title: 1, image: 1,price:1, _id: 0 } })
     .sort({ _id: -1 })
     .limit(6)
     .toArray();
