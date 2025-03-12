@@ -114,6 +114,95 @@ const clearCart = async (email) => {
   return { message: "Cart cleared" };
 };
 
+
+const purchaseSingleCourse = async (email, course) => {
+  const db = await connectDB("userdata");
+  const mycoursesCollection = db.collection('mycourses');
+  const cartsCollection = db.collection('carts');
+
+  const existingCourse = await mycoursesCollection.findOne({
+    email,
+    "courses.title": course.title
+  });
+
+  if (!existingCourse) {
+    await mycoursesCollection.updateOne(
+      { email },
+      { $addToSet: { courses: course } },
+      { upsert: true }
+    );
+    // Fix: Added missing closing brace for $pull object
+    await cartsCollection.updateOne(
+      { email },
+      { $pull: { items: { title: course.title } } } // ← Closing brace added
+    );
+  }
+
+
+
+  return {
+    alreadyPurchased: !!existingCourse,
+    message: existingCourse ?
+      "Course already purchased - removed from cart" :
+      "Course purchased successfully"
+  };
+};
+
+
+//------
+const purchaseCart = async (email) => {
+  const db = await connectDB("userdata");
+  const cartsCollection = db.collection('carts');
+  const mycoursesCollection = db.collection('mycourses');
+
+  // Get cart and check if empty
+  const cart = await cartsCollection.findOne({ email });
+  if (!cart?.items?.length) throw new Error('Cart is empty');
+
+  // Filter out already purchased courses
+  const existingCourses = await mycoursesCollection.findOne({ email });
+  const existingTitles = new Set(
+    existingCourses?.courses?.map(c => c.title) || []
+  );
+
+  const newCourses = cart.items.filter(
+    item => !existingTitles.has(item.title)
+  );
+
+  // Add new courses to mycourses
+  if (newCourses.length > 0) {
+    await mycoursesCollection.updateOne(
+      { email },
+      { $addToSet: {
+        courses: {
+          $each: newCourses.map(c => ({
+            ...c,
+            purchasedAt: new Date()
+          }))
+        }
+      } },
+      { upsert: true }
+    );
+  }
+
+  // Clear cart regardless of purchase status
+  await cartsCollection.deleteOne({ email });
+
+  return {
+    newPurchases: newCourses.length,
+    existingCourses: cart.items.length - newCourses.length,
+    message: `Purchased ${newCourses.length} new courses, ` +
+             `${cart.items.length - newCourses.length} already owned`
+  };
+};
+
+const getMyCourses = async (email) => {
+  const db = await connectDB("userdata");
+  const collection = db.collection('mycourses');
+  const result = await collection.findOne({ email });
+  return result?.courses || [];
+};
+
 module.exports = {
   addCarousel,
   addCourses,
@@ -123,5 +212,8 @@ module.exports = {
   addToCart,
   getCart,
   removeFromCart,
-  clearCart
+  clearCart,
+  purchaseSingleCourse,
+  purchaseCart,
+  getMyCourses
 };

@@ -17,4 +17,7 @@ router.get('/cart', verifyToken, cartController.getCartController);
 router.post('/cart/remove', verifyToken, cartController.removeFromCartController);
 router.delete('/cart/clear', verifyToken, cartController.clearCartController);
 
+router.post('/purchase/single', verifyToken, controller.purchaseSingleController);
+router.post('/purchase/cart', verifyToken, controller.purchaseCartController);
+router.get('/mycourses', verifyToken, controller.getMyCoursesController);
 module.exports = router;

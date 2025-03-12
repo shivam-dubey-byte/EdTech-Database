@@ -7,7 +7,10 @@ const {
   addToCart,
   getCart,
   removeFromCart,
-  clearCart
+  clearCart,
+  purchaseSingleCourse,
+  purchaseCart,
+  getMyCourses
 } = require('../models/dataModel');
 
 
@@ -118,6 +121,72 @@ const clearCartController = async (req, res) => {
   }
 };
 
+const purchaseSingleController = async (req, res) => {
+  try {
+    const { title, image, price } = req.body;
+    const email = req.email;
+
+    if (!title || !image || !price) {
+      return res.status(400).json({ error: "Missing course details" });
+    }
+
+    const course = {
+      title,
+      image,
+      price,
+      purchasedAt: new Date()
+    };
+
+    const result = await purchaseSingleCourse(email, course);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      alreadyPurchased: result.alreadyPurchased
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: "Server error",
+      details: error.message
+    });
+  }
+};
+
+const purchaseCartController = async (req, res) => {
+  try {
+    const email = req.email;
+    const result = await purchaseCart(email);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      newPurchases: result.newPurchases,
+      existingCourses: result.existingCourses
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+const getMyCoursesController = async (req, res) => {
+  try {
+    const email = req.email;
+    const courses = await getMyCourses(email);
+    res.status(200).json({
+      success: true,
+      count: courses.length,
+      courses
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Server error"
+    });
+  }
+};
 
 
 module.exports = {
@@ -129,5 +198,8 @@ module.exports = {
   addToCartController,
   getCartController,
   removeFromCartController,
-  clearCartController
+  clearCartController,
+  purchaseSingleController,
+  purchaseCartController,
+  getMyCoursesController
 };
