@@ -49,10 +49,79 @@ const getLastImages = async () => {
   return images;
 };
 
+// Add course to cart
+const addToCart = async (email, title, image, price) => {
+  const db = await connectDB("userdata");
+  const collection = db.collection('carts');
+
+  // Check if the cart exists
+  const cart = await collection.findOne({ email });
+
+  if (cart) {
+    const existingItem = cart.items.find(item => item.title === title);
+    if (existingItem) {
+      // Increase quantity if the course already exists
+      await collection.updateOne(
+        { email, "items.title": title },
+        { $inc: { "items.$.quantity": 1 } }
+      );
+    } else {
+      // Add new course to cart
+      await collection.updateOne(
+        { email },
+        { $push: { items: { title, image, price, quantity: 1 } } }
+      );
+    }
+  } else {
+    // Create new cart for the user
+    await collection.insertOne({
+      email,
+      items: [{ title, image, price, quantity: 1 }]
+    });
+  }
+
+  return { message: "Course added to cart" };
+};
+
+// Get cart for user
+const getCart = async (email) => {
+  const db = await connectDB("userdata");
+  const collection = db.collection('carts');
+  const cart = await collection.findOne({ email });
+  return cart ? cart.items : [];
+};
+
+// Remove a course from cart using title
+const removeFromCart = async (email, title) => {
+  const db = await connectDB("userdata");
+  const collection = db.collection('carts');
+
+  await collection.updateOne(
+    { email },
+    { $pull: { items: { title } } }
+  );
+
+  return { message: "Course removed from cart" };
+};
+
+// Clear entire cart
+const clearCart = async (email) => {
+  const db = await connectDB("userdata");
+  const collection = db.collection('carts');
+
+  await collection.deleteOne({ email });
+
+  return { message: "Cart cleared" };
+};
+
 module.exports = {
   addCarousel,
   addCourses,
   getLastCourses,
   getCoursesByTitle,
-  getLastImages
+  getLastImages,
+  addToCart,
+  getCart,
+  removeFromCart,
+  clearCart
 };

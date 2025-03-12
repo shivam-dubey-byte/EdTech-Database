@@ -3,7 +3,11 @@ const {
   addCourses,
   getLastCourses,
   getCoursesByTitle,
-  getLastImages
+  getLastImages,
+  addToCart,
+  getCart,
+  removeFromCart,
+  clearCart
 } = require('../models/dataModel');
 
 
@@ -66,6 +70,54 @@ const getLastImagesController = async (req, res) => {
   }
 };
 
+// Add course to cart
+const addToCartController = async (req, res) => {
+  try {
+    const { title, image, price } = req.body;
+    const email = req.email; // Extract email from token
+
+    const response = await addToCart(email, title, image, price);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+// Get user cart
+const getCartController = async (req, res) => {
+  try {
+    const email = req.email; // Extract email from token
+    const cart = await getCart(email);
+    res.status(200).json(cart);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+// Remove a course from cart using title
+const removeFromCartController = async (req, res) => {
+  try {
+    const { title } = req.body;
+    const email = req.email; // Extract email from token
+
+    const response = await removeFromCart(email, title);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+// Clear entire cart
+const clearCartController = async (req, res) => {
+  try {
+    const email = req.email; // Extract email from token
+    const response = await clearCart(email);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
 
 
 module.exports = {
@@ -74,4 +126,8 @@ module.exports = {
   getLastCoursesController,
   getCoursesByTitleController,
   getLastImagesController,
+  addToCartController,
+  getCartController,
+  removeFromCartController,
+  clearCartController
 };
