@@ -20,4 +20,10 @@ router.delete('/cart/clear', verifyToken, cartController.clearCartController);
 router.post('/purchase/single', verifyToken, controller.purchaseSingleController);
 router.post('/purchase/cart', verifyToken, controller.purchaseCartController);
 router.post('/mycourses', verifyToken, controller.getMyCoursesController);
+
+// Wishlist routes
+router.post('/wishlist/add', verifyToken, controller.addToWishlistController);
+router.get('/wishlist', verifyToken, controller.getWishlistController);
+router.post('/wishlist/remove', verifyToken, controller.removeFromWishlistController);
+router.delete('/wishlist/clear', verifyToken, controller.clearWishlistController);
 module.exports = router;

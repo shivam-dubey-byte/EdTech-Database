@@ -203,6 +203,51 @@ const getMyCourses = async (email) => {
   return result?.courses || [];
 };
 
+// Add to wishlist (prevents duplicates)
+const addToWishlist = async (email, title, image, price) => {
+  const db = await connectDB("userdata");
+  const collection = db.collection('wishlists');
+
+  await collection.updateOne(
+    { email },
+    { $addToSet: { items: { title, image, price } } },
+    { upsert: true }
+  );
+
+  return { message: "Course added to wishlist" };
+};
+
+// Get wishlist for user
+const getWishlist = async (email) => {
+  const db = await connectDB("userdata");
+  const collection = db.collection('wishlists');
+  const wishlist = await collection.findOne({ email });
+  return wishlist ? wishlist.items : [];
+};
+
+// Remove a course from wishlist using title
+const removeFromWishlist = async (email, title) => {
+  const db = await connectDB("userdata");
+  const collection = db.collection('wishlists');
+
+  await collection.updateOne(
+    { email },
+    { $pull: { items: { title } } }
+  );
+
+  return { message: "Course removed from wishlist" };
+};
+
+// Clear entire wishlist
+const clearWishlist = async (email) => {
+  const db = await connectDB("userdata");
+  const collection = db.collection('wishlists');
+
+  await collection.deleteOne({ email });
+
+  return { message: "Wishlist cleared" };
+};
+
 module.exports = {
   addCarousel,
   addCourses,
@@ -215,5 +260,9 @@ module.exports = {
   clearCart,
   purchaseSingleCourse,
   purchaseCart,
-  getMyCourses
+  getMyCourses,
+  addToWishlist,
+  getWishlist,
+  removeFromWishlist,
+  clearWishlist,
 };

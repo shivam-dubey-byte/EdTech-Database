@@ -10,7 +10,11 @@ const {
   clearCart,
   purchaseSingleCourse,
   purchaseCart,
-  getMyCourses
+  getMyCourses,
+  addToWishlist,
+  getWishlist,
+  removeFromWishlist,
+  clearWishlist
 } = require('../models/dataModel');
 
 
@@ -189,6 +193,58 @@ const getMyCoursesController = async (req, res) => {
 };
 
 
+// --------------------------
+// Wishlist Handlers
+// --------------------------
+
+// Add course to wishlist
+const addToWishlistController = async (req, res) => {
+  try {
+    const { title, image, price } = req.body;
+    const email = req.email; // Extract email from token
+
+    const response = await addToWishlist(email, title, image, price);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+// Get user wishlist
+const getWishlistController = async (req, res) => {
+  try {
+    const email = req.email; // Extract email from token
+    const wishlist = await getWishlist(email);
+    res.status(200).json(wishlist);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+// Remove a course from wishlist using title
+const removeFromWishlistController = async (req, res) => {
+  try {
+    const { title } = req.body;
+    const email = req.email;
+
+    const response = await removeFromWishlist(email, title);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+// Clear entire wishlist
+const clearWishlistController = async (req, res) => {
+  try {
+    const email = req.email;
+    const response = await clearWishlist(email);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
 module.exports = {
   carouselAdd,
   coursesAdd,
@@ -201,5 +257,11 @@ module.exports = {
   clearCartController,
   purchaseSingleController,
   purchaseCartController,
-  getMyCoursesController
+  getMyCoursesController,
+  // ... existing exports ...
+  addToWishlistController,
+  getWishlistController,
+  removeFromWishlistController,
+  clearWishlistController
+  // ... other exports ...
 };
