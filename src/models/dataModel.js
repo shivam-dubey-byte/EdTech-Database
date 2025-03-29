@@ -169,38 +169,53 @@ const purchaseCart = async (email) => {
   const db = await connectDB("userdata");
   const cartsCollection = db.collection('carts');
   const mycoursesCollection = db.collection('mycourses');
+  const coursesCollection = db.collection('courses');
 
   // Get cart and check if empty
   const cart = await cartsCollection.findOne({ email });
   if (!cart?.items?.length) throw new Error('Cart is empty');
 
-  // Filter out already purchased courses
+  // Fetch existing purchased courses
   const existingCourses = await mycoursesCollection.findOne({ email });
   const existingTitles = new Set(
     existingCourses?.courses?.map(c => c.title) || []
   );
 
+  // Filter out already purchased courses
   const newCourses = cart.items.filter(
     item => !existingTitles.has(item.title)
   );
 
-  // Add new courses to mycourses
   if (newCourses.length > 0) {
+    // Fetch URLs for the new courses
+    const courseTitles = newCourses.map(c => c.title);
+    const coursesWithUrls = await coursesCollection
+      .find({ title: { $in: courseTitles } })
+      .toArray();
+
+    // Map URLs to new courses
+    const updatedCourses = newCourses.map(course => {
+      const courseData = coursesWithUrls.find(c => c.title === course.title);
+      return {
+        ...course,
+        link: courseData ? courseData.url : null, // Add URL if found
+        purchasedAt: new Date()
+      };
+    });
+
+    // Add new courses with URLs to mycourses
     await mycoursesCollection.updateOne(
       { email },
-      { $addToSet: {
-        courses: {
-          $each: newCourses.map(c => ({
-            ...c,
-            purchasedAt: new Date()
-          }))
+      {
+        $addToSet: {
+          courses: { $each: updatedCourses }
         }
-      } },
+      },
       { upsert: true }
     );
   }
 
-  // Clear cart regardless of purchase status
+  // Clear cart after purchase
   await cartsCollection.deleteOne({ email });
 
   return {
