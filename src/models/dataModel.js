@@ -131,7 +131,7 @@ const purchaseSingleCourse = async (email, course) => {
   // Add URL to the course object
   const fullCourse = {
     ...course,
-    url: courseDetails.url,  // Adding the URL from database
+    link: courseDetails.url,  // Adding the URL from database
   };
 
   // Check if the course already exists in user's purchased courses
