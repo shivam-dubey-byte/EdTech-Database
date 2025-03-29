@@ -24,7 +24,7 @@ const getLastCourses = async () => {
   const db = await connectDB("userdata");
   const collection = db.collection('courses');
   // Sort descending by _id (newest first) and limit to 6 documents
-  const courses = await collection.find({}, { projection: { title: 1, image: 1,price:1, _id: 0 } })
+  const courses = await collection.find({}, { projection: { title: 1, image: 1,price:1, _id: 0} })
     .sort({ _id: -1 })
     .limit(6)
     .toArray();
@@ -119,26 +119,40 @@ const purchaseSingleCourse = async (email, course) => {
   const db = await connectDB("userdata");
   const mycoursesCollection = db.collection('mycourses');
   const cartsCollection = db.collection('carts');
+  const coursesCollection = db.collection('courses');
 
+  // Fetch the course details from 'courses' collection to get the URL
+  const courseDetails = await coursesCollection.findOne({ title: course.title });
+
+  if (!courseDetails) {
+    throw new Error("Course not found in database.");
+  }
+
+  // Add URL to the course object
+  const fullCourse = {
+    ...course,
+    url: courseDetails.url,  // Adding the URL from database
+  };
+
+  // Check if the course already exists in user's purchased courses
   const existingCourse = await mycoursesCollection.findOne({
     email,
-    "courses.title": course.title
+    "courses.title": fullCourse.title
   });
 
   if (!existingCourse) {
     await mycoursesCollection.updateOne(
       { email },
-      { $addToSet: { courses: course } },
+      { $addToSet: { courses: fullCourse } }, // Add course with URL
       { upsert: true }
     );
-    // Fix: Added missing closing brace for $pull object
+
+    // Remove from cart if it exists
     await cartsCollection.updateOne(
       { email },
-      { $pull: { items: { title: course.title } } } // ← Closing brace added
+      { $pull: { items: { title: fullCourse.title } } }
     );
   }
-
-
 
   return {
     alreadyPurchased: !!existingCourse,
@@ -147,6 +161,7 @@ const purchaseSingleCourse = async (email, course) => {
       "Course purchased successfully"
   };
 };
+
 
 
 //------
